@@ -12,7 +12,7 @@ class Config:
 
     SERVER_HTTP_PROTOCOL = os.getenv("SERVER_HTTP_PROTOCOL", "http://")
     SERVER_ADDR = os.getenv("SERVER_ADDR", "localhost")
-    SERVER_PORT = os.getenv("SERVER_PORT", "9000")
+    SERVER_PORT = int(os.getenv("SERVER_PORT", "9000"))
 
     # Database
     DB_HOST = os.getenv("DB_HOST", "localhost")
