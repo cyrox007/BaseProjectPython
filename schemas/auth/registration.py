@@ -28,7 +28,7 @@ class RegistrationRequest(BaseModel):
         min_length=6,
         max_length=50,
         description="Пароль пользователя",
-        example="********"
+        example="Password123"
     )
     @validator('password')
     def validate_password(cls, v):

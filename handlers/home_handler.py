@@ -2,17 +2,19 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, Depends
 
-from core.security import get_current_user
+from core.security import get_current_user, require_permission
 from schemas.test.test import TestRequest, TestResponse
 
 
 routers = APIRouter(prefix='/api/v2')
 
-@routers.get('/', 
-            name="Тестовый", 
-            description="TestHome", 
-            response_model=TestResponse)
-async def home(data: Annotated[TestRequest, Query()], current_user = Depends(get_current_user)):
+@routers.get(
+    '/',
+    name="Тестовый",
+    description="TestHome",
+    response_model=TestResponse
+)
+async def home(data: Annotated[TestRequest, Query()], current_user = Depends(require_permission('create_item'))):
     return {
         'uuid': data.uuid,
         'name': 'John',

@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING, List
 from uuid import UUID as UUIDType, uuid4
 
 from sqlalchemy import (
@@ -10,6 +11,10 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Database
+
+
+if TYPE_CHECKING:
+    from models.roles_model import Role
 
 
 class Permission(Database.Base):
@@ -31,6 +36,13 @@ class Permission(Database.Base):
         String(255),
         nullable=True,
         comment="Описание разрешения"
+    )
+
+    roles: Mapped[List["Role"]] = relationship(
+        "Role",
+        secondary="role_permissions",  # Название ассоциативной таблицы
+        back_populates="permissions",  # Должно совпадать с именем в модели Role
+        lazy="selectin"
     )
 
     def __repr__(self):

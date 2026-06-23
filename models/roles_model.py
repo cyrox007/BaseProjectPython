@@ -68,5 +68,5 @@ class UserRoleAssociation(Database.Base):
     )
 
     # Опционально: для доступа к объектам через связь
-    user: Mapped["User"] = relationship("User", back_populates="role_associations")
-    role: Mapped["Role"] = relationship("Role", back_populates="user_associations")
+    """ user: Mapped["User"] = relationship("User", back_populates="role_associations")
+    role: Mapped["Role"] = relationship("Role", back_populates="user_associations") """

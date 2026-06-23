@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from handlers.auth_handler import routers as auth_routers
-from handlers.home import routers as home_routers
+from handlers.home_handler import routers as home_routers
 
 def _setup_cors(app: FastAPI):
     pass

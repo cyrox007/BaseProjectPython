@@ -6,12 +6,12 @@ class LoginRequest(BaseModel):
     email: str = Field(
         ..., 
         description="Уникальное имя пользователя в системе",
-        example="user1"
+        example="example@domain.com"
     )
 
     password: str = Field(
         description="Пароль пользователя в системе",
-        example="qwerty)"
+        example="Password123"
     )
 
 class LoginResponse(BaseModel):
