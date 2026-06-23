@@ -13,7 +13,9 @@ security = HTTPBearer()
 
 async def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)):
     # проверяем токен на валидность
-    payload = verify_token(token)
+    print(token.credentials)
+    payload = verify_token(token.credentials)
+    print(payload)
     return payload
 
 async def get_current_user_with_permission(

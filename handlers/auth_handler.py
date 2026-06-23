@@ -31,8 +31,8 @@ async def login(form_data: LoginRequest, db_session: AsyncSession = Depends(get_
         )
     
     access_token = create_access_token({
-        'sub': 1,
-        'username': form_data.email
+        'sub': str(user.id),
+        'email': user.email
     })
     
     return {'status': 'success', 'access_token': access_token, 'token_type': 'bearer'}
