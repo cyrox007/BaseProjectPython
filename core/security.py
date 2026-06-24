@@ -31,11 +31,15 @@ async def get_current_user_with_permission(
     current_user: dict = Depends(get_current_user),
     session: AsyncSession = Depends(get_db_session)
 ):
+    # Получаем информацию о запросе
+    client_info = await get_client_info(request)
+    url = f"{request.method} {request.url.path}"
+
     if not current_user:
         # Логируем попытку неавторизованного доступа
-        client_info = await get_client_info(request)
         logger.warning(
             f"Доступ запрещён (неавторизован): {permission_name} | "
+            f"URL: {url} | "
             f"IP: {client_info['ip']} | User-Agent: {client_info['user_agent']}"
         )
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -50,6 +54,7 @@ async def get_current_user_with_permission(
 
         logger.warning(
             f"Доступ запрещён: {permission_name} | "
+            f"URL: {url} | "
             f"User: {email} (ID: {user_id}) | "
             f"Role: {role_name} | "
             f"IP: {request.client.host if request.client else 'unknown'}"
