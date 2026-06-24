@@ -46,7 +46,7 @@ async def registratiom(data: RegistrationRequest, db_session: AsyncSession = Dep
     existing_user = await get_user_by_email(db_session, data.email)
     if existing_user:
         return JSONResponse(
-            status_code=400,
+            status_code=409,
             content={"status": "error", "message": "Пользователь с таким email уже существует"}
         )
     
