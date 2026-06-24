@@ -9,7 +9,7 @@ from services.users_service import get_user_by_email, insert_user
 from utils.hashed_password import verify_password
 from utils.jwt import create_access_token
 
-routers = APIRouter(prefix='/api/v1/auth')
+routers = APIRouter(prefix='/api/v1/auth', tags=['Auth'])
 
 
 @routers.post('/login',
