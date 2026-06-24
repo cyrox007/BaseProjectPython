@@ -1,17 +1,21 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.dependencies import get_db_session
+from core.logger import setup_logger
 from core.security import require_permission
+from schemas.error_responses import ERROR_RESPONSES
 from schemas.roles.roles import RoleItem, RoleList, RoleRequest
 from services.role_service import (
     get_role, get_role_by_code, 
     get_role_list, insert_role, 
     update_role)
 
+
+logger = setup_logger(__name__)
 routers = APIRouter(prefix='/api/v1/roles', tags=['Admin.Roles'])
 
 
@@ -77,7 +81,8 @@ async def create_role(data: RoleRequest,
             name='Редактирование роли', 
             response_model=RoleItem)
 async def edit_role(role_id: UUID,
-    data: RoleRequest,            
+    data: RoleRequest,
+    current_user = Depends(require_permission('roles:update')),    
     db_session: AsyncSession = Depends(get_db_session)):
 
     current_role = await get_role(db_session, role_id)
@@ -115,3 +120,32 @@ async def edit_role(role_id: UUID,
         name=updated_role.name,
         description=updated_role.description
     )
+
+@routers.delete('/delete/{role_id}',
+                name='Удаление роли', 
+                status_code=status.HTTP_204_NO_CONTENT, 
+                responses={**ERROR_RESPONSES})
+async def delete_role(role_id: UUID,
+    current_user = Depends(require_permission('roles:update')),
+    db_session: AsyncSession = Depends(get_db_session)):
+
+    current_role = await get_role(db_session, role_id)
+    
+    if not current_role:
+        raise HTTPException(status_code=404, detail="Role not found")
+    
+    if current_role.name.upper() == "SUPERADMIN":
+        logger.warning(f"Попытка удаления SUPERADMIN роли | User: {current_user.get('email')}")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete SUPERADMIN role"
+        )
+    
+    await db_session.delete(current_role)
+    try:
+        await db_session.flush()
+        return None
+    except Exception as e:
+        logger.error(f'{e}')
+        await db_session.rollback()
+        return None
