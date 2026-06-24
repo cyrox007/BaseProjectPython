@@ -1,3 +1,4 @@
+from typing import List
 from uuid import UUID
 
 from sqlalchemy import select
@@ -20,3 +21,15 @@ async def has_permission(session: AsyncSession, user_id: UUID, permission_name: 
 
     result = await session.execute(stmt)
     return result.scalar_one_or_none() is not None
+
+
+async def get_permissions(session: AsyncSession, offset: int = 0, limit: int = 10) -> List[Permission]:
+    stmt = select(Permission)
+
+    stmt = stmt.offset(offset).limit(limit)
+    
+    result = await session.execute(
+        stmt
+    )
+
+    return result.scalars()
