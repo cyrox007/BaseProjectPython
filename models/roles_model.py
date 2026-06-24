@@ -39,7 +39,7 @@ class Role(Database.Base):
     users: Mapped[List["User"]] = relationship(
         "User",
         secondary="user_roles",
-        back_populates="roles"
+        back_populates="role"
     )
     permissions: Mapped[List["Permission"]] = relationship(
         "Permission",
@@ -66,7 +66,3 @@ class UserRoleAssociation(Database.Base):
         primary_key=True,
         index=True
     )
-
-    # Опционально: для доступа к объектам через связь
-    """ user: Mapped["User"] = relationship("User", back_populates="role_associations")
-    role: Mapped["Role"] = relationship("Role", back_populates="user_associations") """

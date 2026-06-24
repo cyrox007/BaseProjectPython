@@ -43,7 +43,7 @@ class User(Database.Base):
         comment="Хэш пароля (bcrypt)"
     )
 
-    roles: Mapped[List["Role"]] = relationship(
+    role: Mapped["Role"] = relationship(
         "Role",
         secondary="user_roles",  # Название ассоциативной таблицы
         back_populates="users",  # Должно совпадать с именем в модели Role

@@ -1,3 +1,4 @@
+from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import Database
@@ -19,3 +20,15 @@ async def get_db_session() -> AsyncSession: # type: ignore
         raise
     finally:
         await db_session.close()
+
+
+async def get_client_info(request: Request) -> dict:
+    """
+    Получение информации о клиенте для логирования
+    """
+    return {
+        "ip": request.client.host if request.client else "unknown",
+        "user_agent": request.headers.get("user-agent", "unknown"),
+        "method": request.method,
+        "path": request.url.path,
+    }
