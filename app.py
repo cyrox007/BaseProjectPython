@@ -15,8 +15,8 @@ def _register_routers(app: FastAPI) -> None:
     routers = [
         auth_routers,
         home_routers,
-        roles_routers,
-        permission_routers
+        permission_routers,
+        roles_routers
     ]
 
     for router in routers:

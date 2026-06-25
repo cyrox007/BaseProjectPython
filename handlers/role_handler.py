@@ -8,10 +8,10 @@ from core.dependencies import get_db_session
 from core.logger import setup_logger
 from core.security import require_permission
 from schemas.error_responses import ERROR_RESPONSES
-from schemas.roles.roles import RoleItem, RoleList, RoleRequest
+from schemas.roles.schema import RoleItem, RoleList, RoleRequest
 from services.role_service import (
     get_role, get_role_by_code, 
-    get_role_list, insert_role, 
+    get_role_list, insert_role, remove_role, 
     update_role)
 
 
@@ -141,11 +141,6 @@ async def delete_role(role_id: UUID,
             detail="Cannot delete SUPERADMIN role"
         )
     
-    await db_session.delete(current_role)
-    try:
-        await db_session.flush()
-        return None
-    except Exception as e:
-        logger.error(f'{e}')
-        await db_session.rollback()
-        return None
+    await remove_role(db_session, current_role)
+
+    return

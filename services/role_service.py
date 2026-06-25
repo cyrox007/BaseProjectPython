@@ -42,6 +42,7 @@ async def insert_role(session: AsyncSession, name: str, description: str = ''):
         logger.info(f"Роль создана: {new_role.id}")
         return new_role
     except Exception as e:
+        await session.rollback()
         logger.error(f'Ошибка при создании роли: {e}')
         return None
     
@@ -58,5 +59,17 @@ async def update_role(session: AsyncSession, target_role: Role,
         logger.info(f"Роль обновлена: {target_role.id}")
         return target_role
     except Exception as e:
-        logger.error(f'Ошибка при создании роли: {e}')
+        await session.rollback()
+        logger.error(f'Ошибка при изменения роли: {e}')
         return None
+    
+async def remove_role(session: AsyncSession, role: Role):
+    session.delete(role)
+
+    try:
+        await session.flush()
+        return True
+    except Exception as e:
+        await session.rollback()
+        logger.error(f'Ошибка при удалении роли: {e}')
+        return False
