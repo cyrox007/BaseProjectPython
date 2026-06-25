@@ -14,20 +14,9 @@ routers = APIRouter(prefix='/api/v1/permissions', tags=['Admin.Permission'])
 
 @routers.get('/list', 
     name="Получить список разрешений", 
-    response_model=PermissionList,
-    responses={
-        status.HTTP_403_FORBIDDEN: {
-            "description": "Недостаточно прав",
-            "content": {
-                "application/json": {
-                    "example": {"detail": "Permission 'permissions:index' required"}
-                }
-            }
-        }
-    })
-async def get_list(
-    current_user = Depends(require_permission('permission:index')),
-    db_session = Depends(get_db_session)):
+    response_model=PermissionList)
+async def get_list(current_user = Depends(require_permission('permission:index')),
+                db_session = Depends(get_db_session)):
 
     permissions = await get_permissions(db_session)
 
@@ -37,8 +26,8 @@ async def get_list(
             name="Получить разрешение по ID",
             response_model=PermissionItem)
 async def view_permission(permission_id: UUID,
-    current_user = Depends(require_permission('permission:show')),
-    db_session = Depends(get_db_session)):
+                        current_user = Depends(require_permission('permission:show')),
+                        db_session = Depends(get_db_session)):
 
     permission = await get_permission(db_session, permission_id)
 
@@ -52,16 +41,14 @@ async def view_permission(permission_id: UUID,
         description=permission.description
     )
 
-@routers.post(
-    '/create',
-    name="Создать разрешение",
-    response_model=PermissionItem,
-    responses=PERMISSION_ERRORS
-)
-async def create_permission(
-    data: PermissionRequest,
-    current_user = Depends(require_permission('permission:show')),
-    db_session = Depends(get_db_session)):
+@routers.post('/create',
+            name="Создать разрешение",
+            response_model=PermissionItem,
+            responses=PERMISSION_ERRORS,
+            status_code=status.HTTP_201_CREATED)
+async def create_permission(data: PermissionRequest,
+                            current_user = Depends(require_permission('permission:create')),
+                            db_session = Depends(get_db_session)):
 
     existing = await get_permission_by_code(db_session, data.name)
     if existing:
@@ -90,10 +77,10 @@ async def create_permission(
     )
 
 @routers.delete('/delete/{permission_id}',
-    name="Удалить разрешение из системы", 
-    status_code=status.HTTP_204_NO_CONTENT)
+                name="Удалить разрешение из системы", 
+                status_code=status.HTTP_204_NO_CONTENT)
 async def delete_permssion(permission_id: UUID,
-                        current_user = Depends(require_permission('permission:show')),
+                        current_user = Depends(require_permission('permission:delete')),
                         db_session = Depends(get_db_session)):
     
     permission = await get_permission(db_session, permission_id)
