@@ -16,7 +16,8 @@ routers = APIRouter(
 )
 
 @routers.post('/assign',
-              name="Назначение роли пользователю")
+              name="Назначение роли пользователю",
+              response_model=AssignRoleResponse)
 async def assign_user_to_role_endpoint(data: UserRoleAssocRequest,
 									   current_user = Depends(require_permission('permission:assign')),
                                         db_session = Depends(get_db_session)):
