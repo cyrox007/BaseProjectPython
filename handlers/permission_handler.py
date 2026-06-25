@@ -9,7 +9,7 @@ from schemas.permission.schema import PERMISSION_ERRORS, PermissionItem, Permiss
 from services.permission_service import get_permission, get_permission_by_code, get_permissions, insert_permission, remove_permission
 
 logger = setup_logger(__name__)
-routers = APIRouter(prefix='/api/v1/permissions', tags=['Admin.Permission'])
+routers = APIRouter(prefix='/api/v1/permissions', tags=['Admin.Permissions'])
 
 
 @routers.get('/list', 
@@ -110,3 +110,4 @@ async def delete_permssion(permission_id: UUID,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error"
         )
+    

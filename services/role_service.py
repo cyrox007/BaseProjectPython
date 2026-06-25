@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import setup_logger
+from models.permissions_model import RolePermissionAssociation
 from models.roles_model import Role
 
 logger = setup_logger(__name__)
@@ -72,4 +73,55 @@ async def remove_role(session: AsyncSession, role: Role):
     except Exception as e:
         await session.rollback()
         logger.error(f'Ошибка при удалении роли: {e}')
+        return False
+    
+
+async def assign_perm_to_role(session: AsyncSession, role_id: UUID, permission_id: UUID) -> bool:
+    # Проверяем, не существует ли уже
+    existing = await get_role_permission_association(session, role_id, permission_id)
+    if existing:
+        logger.warning(f"Разрешение {permission_id} уже назначено роли {role_id}")
+        return None
+        
+    association = RolePermissionAssociation(
+        role_id=role_id,
+        permission_id=permission_id
+    )
+
+    session.add(association)
+    try:
+        await session.flush()
+        return True
+    except Exception as e:
+        await session.rollback()
+        return False
+    
+async def get_role_permission_association(session: AsyncSession, role_id: UUID, permission_id: UUID) -> Optional[RolePermissionAssociation]:
+    stmt = select(RolePermissionAssociation).where(
+        RolePermissionAssociation.role_id == role_id,
+        RolePermissionAssociation.permission_id == permission_id
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+async def revoke_perm_from_role(
+    session: AsyncSession,
+    role_id: UUID,
+    permission_id: UUID
+) -> bool:
+    """Отзыв разрешения у роли"""
+    try:
+        association = await get_role_permission_association(session, role_id, permission_id)
+        if not association:
+            return False
+        
+        await session.delete(association)
+        await session.flush()
+        
+        logger.info(f"Разрешение {permission_id} отозвано у роли {role_id}")
+        return True
+    except Exception as e:
+        logger.error(f"Ошибка при отзыве разрешения: {e}")
         return False

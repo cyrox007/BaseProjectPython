@@ -2,8 +2,9 @@ from fastapi import FastAPI
 
 from handlers.auth_handler import routers as auth_routers
 from handlers.home_handler import routers as home_routers
-from handlers.role_handler import routers as roles_routers
 from handlers.permission_handler import routers as permission_routers
+from handlers.role_handler import routers as roles_routers
+from handlers.role_permission_handler import routers as role_perm_routers
 
 def _setup_cors(app: FastAPI):
     pass
@@ -16,7 +17,8 @@ def _register_routers(app: FastAPI) -> None:
         auth_routers,
         home_routers,
         permission_routers,
-        roles_routers
+        roles_routers,
+        role_perm_routers
     ]
 
     for router in routers:

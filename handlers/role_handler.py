@@ -23,7 +23,7 @@ routers = APIRouter(prefix='/api/v1/roles', tags=['Admin.Roles'])
             name='Получить список ролей',
             response_model=RoleList)
 async def get_roles(
-    #current_user = Depends(require_permission('roles:index')),
+    current_user = Depends(require_permission('roles:index')),
     db_session: AsyncSession = Depends(get_db_session)):
 
     roles = await get_role_list(db_session)
