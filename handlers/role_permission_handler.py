@@ -26,7 +26,7 @@ routers = APIRouter(
                 409: {"description": "Разрешение уже назначено роли"}
             })
 async def assign_permission_to_role_endpoint(data: RolePermAssocRequest,
-                          #current_user = Depends(require_permission('permission:assign')),
+                          current_user = Depends(require_permission('permission:assign')),
                             db_session = Depends(get_db_session)):
     
 	role = await get_role(db_session, data.role_id)
