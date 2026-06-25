@@ -3,11 +3,22 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from core.dependencies import get_db_session
+from core.logger import setup_logger
 from core.security import require_permission
 from schemas.users.schemas import UserCreateRequest, UserList, UserItem, UserUpdateRequest
-from services.users_service import get_user_by_email, get_users_list, get_user_by_uuid, insert_user, update_user
+from services.users_service import (
+    assign_role_to_user, 
+    get_user_by_email, 
+    get_user_role_association, 
+    get_users_list, 
+    get_user_by_uuid, 
+    insert_user, 
+    revoke_role_from_user, 
+    update_user
+)
 
 
+logger = setup_logger(__name__)
 routers = APIRouter(prefix='/api/v1/users', tags=['Admin.Users'])
 
 @routers.get('/list',
@@ -68,7 +79,18 @@ async def create_user_endpoint(data: UserCreateRequest,
             detail="Failed to create user"
         )
     
-    # дальше надо назначить роль юзера
+    association = await assign_role_to_user(db_session, new_user, data.role_id)
+    if not association:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to assign permission to role"
+        )
+    
+    logger.info(
+        f"Пользователь создан: {new_user.email} (ID: {new_user.id}) | "
+        f"Роль: {data.role_id} | "
+        f"Создал: {current_user.get('email')}"
+    )
 
     return new_user
 
@@ -77,7 +99,8 @@ async def create_user_endpoint(data: UserCreateRequest,
              response_model=UserItem,
              responses={
                 404: {"description": "Пользователь не найден"},
-                409: {"description": "Email уже занят"}
+                409: {"description": "Email уже занят"},
+                400: {"description": "Ошибка обновления"}
              })
 async def update_user_endpoint(user_id: UUID,
                     data: UserUpdateRequest,
@@ -107,8 +130,7 @@ async def update_user_endpoint(user_id: UUID,
         email=data.email,
         firstname=data.firstname,
         lastname=data.lastname,
-        password=data.password,
-        role_id=data.role_id
+        password=data.password
     )
 
     if not updated_user:
@@ -117,7 +139,35 @@ async def update_user_endpoint(user_id: UUID,
             detail="Failed to update user"
         )
     
-    # тут проверяем передан ли новый параметр role_id и отличается ли от от текущего затем переназначаем
-    
-    #logger.info(f"Пользователь обновлён: {updated_user.email} (ID: {updated_user.id})")
+    # 4. Обновляем роль (если передана и отличается от текущей)
+    if data.role_id is not None:
+        # Получаем текущую роль пользователя
+        current_association = await get_user_role_association(db_session, user_id)
+        current_role_id = current_association.role_id if current_association else None
+        
+        # Если роль изменилась
+        if current_role_id != data.role_id:
+            # Если была роль — удаляем старую
+            if current_association:
+                await revoke_role_from_user(db_session, user_id, current_role_id)
+            
+            # Назначаем новую роль
+            association = await assign_role_to_user(db_session, updated_user, data.role_id)
+            if not association:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to assign new role to user"
+                )
+            
+            logger.info(
+                f"Роль пользователя изменена: {user.email} | "
+                f"Старая роль: {current_role_id} | "
+                f"Новая роль: {data.role_id} | "
+                f"Обновил: {current_user.get('email')}"
+            )
+
+    logger.info(
+        f"Пользователь обновлён: {updated_user.email} (ID: {updated_user.id}) | "
+        f"Обновил: {current_user.get('email')}"
+    )
     return updated_user

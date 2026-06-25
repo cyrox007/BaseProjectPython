@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import setup_logger
+from models.roles_model import UserRoleAssociation
 from models.users_model import User
 from utils.hashed_password import hash_password
 
@@ -63,8 +64,7 @@ async def update_user(
     email: Optional[str] = None,
     firstname: Optional[str] = None,
     lastname: Optional[str] = None,
-    password: Optional[str] = None,
-    role_id: Optional[UUID] = None
+    password: Optional[str] = None
 ) -> Optional[User]:
     """
     Частичное обновление данных пользователя.
@@ -98,3 +98,56 @@ async def update_user(
     except Exception as e:
         logger.error(f"Ошибка при обновлении пользователя: {e}")
         return None
+    
+async def get_user_role_association(session: AsyncSession, user_id: UUID, role_id: UUID) -> Optional[UserRoleAssociation]:
+    stmt = select(UserRoleAssociation).where(
+        UserRoleAssociation.role_id == role_id,
+        UserRoleAssociation.user_id == user_id
+    )
+
+    result = await session.execute(stmt)
+
+    return result.scalar_one_or_none()
+
+async def assign_role_to_user(session: AsyncSession, user_id: UUID, role_id: UUID) -> Optional[UserRoleAssociation]:
+        
+    association = UserRoleAssociation(
+        role_id=role_id,
+        user_id=user_id
+    )
+
+    session.add(association)
+    try:
+        await session.flush()
+        return True
+    except Exception as e:
+        await session.rollback()
+        return False
+    
+async def revoke_role_from_user(
+    session: AsyncSession,
+    user_id: UUID,
+    role_id: UUID
+) -> bool:
+    """Отзыв роли у пользователя"""
+    try:
+        stmt = select(UserRoleAssociation).where(
+            UserRoleAssociation.user_id == user_id,
+            UserRoleAssociation.role_id == role_id
+        )
+        result = await session.execute(stmt)
+        association = result.scalar_one_or_none()
+        
+        if not association:
+            logger.warning(f"Роль {role_id} не найдена у пользователя {user_id}")
+            return False
+        
+        await session.delete(association)
+        await session.flush()
+        
+        logger.info(f"Роль {role_id} отозвана у пользователя {user_id}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Ошибка при отзыве роли: {e}")
+        return False
