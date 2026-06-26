@@ -8,6 +8,8 @@ from handlers.role_permission_handler import routers as role_perm_routers
 from handlers.users_handler import routers as users_routers
 from handlers.user_role_handler import routers as user_role_routers
 
+from settings import config
+
 def _setup_cors(app: FastAPI):
     pass
 
@@ -31,9 +33,9 @@ def _register_routers(app: FastAPI) -> None:
 def create_app() -> FastAPI:
     
     app = FastAPI(
-        title="TestApp",
-        description='Description app',
-        version='1.0.0'
+        title=config.APPNAME,
+        description=config.APPDESCRIPTION,
+        version=config.APPVERSION
     )
 
     _setup_cors(app)

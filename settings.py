@@ -7,6 +7,14 @@ load_dotenv()
 
 class Config:
     DEBUG: str = os.getenv("DEBUG", 'False').lower() == 'true'
+    APPNAME: str = os.getenv("APPNAME", 'Application')
+    APPDESCRIPTION: str = os.getenv(
+        'APPDESCRIPTION', 
+        """ Lorem ipsum dolor sit amet, consectetuer 
+        adipiscing elit. Aenean commodo ligula eget dolor. 
+        Aenean massa. Cum sociis natoque penatibus et """
+    )
+    APPVERSION: str = os.getenv("APPVERSION", '1.0.0')
 
     ABSPATH = os.path.dirname(os.path.abspath(__file__))
 
