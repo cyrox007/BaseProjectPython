@@ -14,7 +14,7 @@ from utils.hashed_password import hash_password
 
 logger = setup_logger(__name__)
 
-@cache(key_prefix="users:list", ttl=60, key_args=["offset", "limit"], use_pickle=True)
+@cache(key_prefix="users:list", ttl=60, key_args=["offset", "limit"])
 async def get_users_list(session: AsyncSession, offset=0, limit=10) -> UserList:
     stmt = select(User).options(selectinload(User.role))
 
@@ -24,23 +24,26 @@ async def get_users_list(session: AsyncSession, offset=0, limit=10) -> UserList:
 
     result = await session.execute(stmt)
     users = result.scalars().all()
-    return UserList(users=users)
+    return UserList(users=users).model_dump()
 
-async def get_user_by_uuid(session: AsyncSession, uuid: UUID) -> UserItem:
+async def get_user_by_uuid(session: AsyncSession, uuid: UUID) -> Optional[UserItem]:
     result = await session.execute(
         select(User).where(User.id == uuid)
     )
     user = result.scalar_one_or_none()
-    return UserItem(id=user, email=user.email,
+    return UserItem(id=user.id, email=user.email,
                     firstname=user.firstname, lastname=user.lastname, 
-                    role=user.role)
+                    role=user.role).model_dump() if user else None
 
 @cache(key_prefix='user:email', ttl=300, key_args=['email'])
-async def get_user_by_email(session: AsyncSession, email: str) -> Optional[User]:
+async def get_user_by_email(session: AsyncSession, email: str) -> Optional[UserItem]:
     result = await session.execute(
         select(User).where(User.email == email)
     )
-    return result.scalar_one_or_none()
+    user = result.scalar_one_or_none()
+    return UserItem(id=user.id, email=user.email,
+                    firstname=user.firstname, lastname=user.lastname, 
+                    role=user.role).model_dump() if user else None
 
 async def insert_user(
         session: AsyncSession, 
@@ -48,7 +51,7 @@ async def insert_user(
         lastname: str,
         password: str,
         email: str,
-) -> Optional[User]:
+) -> Optional[UserItem]:
 
     new_user = User(
         email=email,
@@ -63,7 +66,10 @@ async def insert_user(
         await session.flush()
         await invalidate_cache("users:*")
         logger.info(f"Пользователь создан: {new_user.id}")
-        return new_user
+        
+        return UserItem(id=new_user.id, email=new_user.email,
+                    firstname=new_user.firstname, lastname=new_user.lastname, 
+                    role=new_user.role).model_dump()
     except Exception as e:
         logger.error(f'Ошибка при создании пользователя: {e}')
         return None

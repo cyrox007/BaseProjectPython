@@ -32,7 +32,7 @@ class RedisClient:
                 self._client = redis.from_url(
                     config.REDIS_URL or "redis://localhost:6379/0",
                     decode_responses=True,
-                    max_connections=20,
+                    max_connections=200,
                     socket_connect_timeout=5,
                     socket_timeout=5,
                     retry_on_timeout=True,
@@ -154,8 +154,7 @@ def cache(
     key_prefix: str = "",
     ttl: int = 300,  # 5 минут
     key_from_args: bool = True,
-    key_args: list = None,
-    use_pickle: bool = False
+    key_args: list = None
 ):
     """
     Декоратор для кэширования результатов функций.
@@ -200,10 +199,7 @@ def cache(
             if redis_client.client:
                 cached_value = await redis_client.get(cache_key)
                 if cached_value is not None:
-                    if use_pickle:
-                        return pickle.loads(cached_value)
                     try:
-                        # Пробуем парсить как JSON
                         return json.loads(cached_value)
                     except (json.JSONDecodeError, TypeError):
                         return cached_value
@@ -214,10 +210,7 @@ def cache(
             # Сохраняем в кэш
             if result is not None and redis_client.client:
                 try:
-                    if use_pickle:
-                        value_to_cache = pickle.dumps(result)
-                    else:
-                        value_to_cache = json.dumps(result, default=str)
+                    value_to_cache = json.dumps(result, default=str)
                     await redis_client.set(cache_key, value_to_cache, ttl=ttl)
                 except Exception as e:
                     logger.warning(f"Не удалось сохранить в кэш: {e}")

@@ -5,7 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from core.dependencies import get_db_session
 from core.logger import setup_logger
 from core.security import require_permission
-from schemas.users.schemas import UserCreateRequest, UserList, UserItem, UserUpdateRequest
+from schemas.users.schemas import (
+    UserCreateRequest, UserList, 
+    UserItem,  UserUpdateRequest)
 from services.users_service import (
     assign_role_to_user, 
     get_user_by_email, 
@@ -38,18 +40,17 @@ async def get_users(#current_user = Depends(require_permission('users:index')),
              name="Получить пользователя по ID",
             response_model=UserItem)
 async def show_user(user_id: UUID,
-             current_user = Depends(require_permission('users:show')),
+             #current_user = Depends(require_permission('users:show')),
              db_session = Depends(get_db_session)):
 
     user = await get_user_by_uuid(db_session, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
 
-    return UserItem(
-        id=user.id,
-        email=user.email,
-        firstname=user.firstname,
-        lastname=user.lastname,
-        role=user.role
-    )
+    return user
 
 @routers.post('/create', 
              name="Создание пользователя",

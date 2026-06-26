@@ -23,8 +23,8 @@ class Database:
             cls._engine = create_async_engine(
                 config.database_url(async_mode=True),
                 # Оптимизированные настройки пула
-                pool_size=20,
-                max_overflow=10,
+                pool_size=100,
+                max_overflow=50,
                 pool_timeout=30,
                 pool_pre_ping=True,  
                 pool_recycle=300,
