@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,12 +22,9 @@ async def login(form_data: LoginRequest, db_session: AsyncSession = Depends(get_
         email=form_data.email
     )
     if not user or not verify_password(form_data.password, str(user.hashed_password)):
-        return JSONResponse(
-            status_code=403,
-            content={
-                'status': 'error',
-                'detail': 'Incorrect username or password'
-            }
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Incorrect username or password'
         )
     
     access_token = create_access_token({
@@ -40,20 +37,20 @@ async def login(form_data: LoginRequest, db_session: AsyncSession = Depends(get_
 @routers.post('/registration', 
             name="Регистрация нового пользователя",
             description="Метод регистрации нового пользователя", 
-            status_code=201,
+            status_code=status.HTTP_201_CREATED,
             response_model=RegistrationResponse)
 async def registratiom(data: RegistrationRequest, db_session: AsyncSession = Depends(get_db_session)):
     existing_user = await get_user_by_email(db_session, data.email)
     if existing_user:
-        return JSONResponse(
-            status_code=409,
-            content={"status": "error", "message": "Пользователь с таким email уже существует"}
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Пользователь с таким email уже существует"
         )
     
     if not await insert_user(db_session, data.firstname, data.lastname, data.password, data.email):
-        return JSONResponse(
+        raise HTTPException(
             status_code=400,
-            content={"status": "error", "message": "Ошибка при создании пользователя"}
+            detail="Ошибка при создании пользователя"
         )
     
     return RegistrationResponse(
