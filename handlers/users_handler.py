@@ -30,10 +30,13 @@ async def get_users(#current_user = Depends(require_permission('users:index')),
              db_session = Depends(get_db_session),
              offset: int = Query(0, ge=0, description="Пропустить N записей"),
              limit: int = Query(20, ge=1, le=100, description="Количество записей")):
+    
     users = await get_users_list(
         db_session,
         offset=offset,
-        limit=limit)
+        limit=limit
+    )
+    
     return users
 
 @routers.get('/{user_id}',

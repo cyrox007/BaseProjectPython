@@ -124,8 +124,8 @@ async def revoke_permission_from_role_endpoint(
         )
     
     # Отзываем
-    success = await revoke_perm_from_role(db_session, data.role_id, data.permission_id)
-    
+    success = await revoke_perm_from_role(db_session, association)
+    logger.info(f"Разрешение {data.permission_id} отозвано у роли {data.role_id}")
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

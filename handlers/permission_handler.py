@@ -5,8 +5,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from core.dependencies import get_db_session
 from core.logger import setup_logger
 from core.security import require_permission
-from schemas.permission.schema import PERMISSION_ERRORS, PermissionItem, PermissionList, PermissionRequest
-from services.permission_service import get_permission, get_permission_by_code, get_permissions, insert_permission, remove_permission
+from schemas.permission.schema import (
+    PERMISSION_ERRORS, PermissionItem, 
+    PermissionList, PermissionRequest
+)
+from services.permission_service import (
+    get_permission, get_permission_by_code, 
+    get_permissions, insert_permission, 
+    remove_permission
+)
 
 logger = setup_logger(__name__)
 routers = APIRouter(prefix='/api/v1/permissions', tags=['Admin.Permissions'])
@@ -20,7 +27,7 @@ async def get_list(current_user = Depends(require_permission('permission:index')
 
     permissions = await get_permissions(db_session)
 
-    return PermissionList(permissions=permissions)
+    return permissions
 
 @routers.get('/{permission_id}',
             name="Получить разрешение по ID",
@@ -35,17 +42,16 @@ async def view_permission(permission_id: UUID,
         raise HTTPException(status_code=404, detail="Permission not found")
     
 
-    return PermissionItem(
-        id=permission.id,
-        name=permission.name,
-        description=permission.description
-    )
+    return permission
 
 @routers.post('/create',
             name="Создать разрешение",
             response_model=PermissionItem,
-            responses=PERMISSION_ERRORS,
-            status_code=status.HTTP_201_CREATED)
+            status_code=status.HTTP_201_CREATED,
+            responses={
+                409: {"description": "Разрешение уже существует"},
+                400: {"description": "Ошибка валидации"}
+            })
 async def create_permission(data: PermissionRequest,
                             current_user = Depends(require_permission('permission:create')),
                             db_session = Depends(get_db_session)):
@@ -70,11 +76,7 @@ async def create_permission(data: PermissionRequest,
             detail="Failed to create permission"
         )
     
-    return PermissionItem(
-        id=new_permission.id,
-        name=new_permission.name,
-        description=new_permission.description
-    )
+    return new_permission
 
 @routers.delete('/delete/{permission_id}',
                 name="Удалить разрешение из системы", 

@@ -14,6 +14,14 @@ class RoleItem(BaseModel):
     name: str
     description: Optional[str] = None
 
+    @field_validator("id", mode="before")
+    @classmethod
+    def validate_uuid(cls, v):
+        """Преобразует строку в UUID, если необходимо"""
+        if isinstance(v, str):
+            return UUID(v)
+        return v
+    
     # ✅ Разрешаем создавать модель из ORM-объекта
     model_config = ConfigDict(
         from_attributes=True,
