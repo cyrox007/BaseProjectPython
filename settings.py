@@ -44,7 +44,9 @@ class Config:
     ENCRYPTION_KEY = os.getenv("API_TOKEN_ENCRYPTION_KEY")
     
     # Redis
-    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    CACHE_TTL = int(os.getenv("CACHE_TTL", "300"))  # 5 минут
+    CACHE_ENABLED = os.getenv("CACHE_ENABLED", "true").lower() == "true"
     
     # Celery
     CELERY_BROKER_URL: str = REDIS_URL

@@ -11,6 +11,7 @@ from utils.hashed_password import hash_password
 
 logger = setup_logger(__name__)
 
+
 async def get_users_list(session: AsyncSession, offset=0, limit=10) -> List[User]:
     stmt = select(User)
 
