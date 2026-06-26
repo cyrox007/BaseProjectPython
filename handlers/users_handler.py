@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.dependencies import get_db_session
 from core.logger import setup_logger
@@ -24,10 +24,15 @@ routers = APIRouter(prefix='/api/v1/users', tags=['Admin.Users'])
 @routers.get('/list',
              name="Получить список пользователей",
              response_model=UserList)
-async def get_users(current_user = Depends(require_permission('users:index')),
-             db_session = Depends(get_db_session)):
-    users = await get_users_list(db_session)
-    return UserList(users=users)
+async def get_users(#current_user = Depends(require_permission('users:index')),
+             db_session = Depends(get_db_session),
+             offset: int = Query(0, ge=0, description="Пропустить N записей"),
+             limit: int = Query(20, ge=1, le=100, description="Количество записей")):
+    users = await get_users_list(
+        db_session,
+        offset=offset,
+        limit=limit)
+    return users
 
 @routers.get('/{user_id}',
              name="Получить пользователя по ID",

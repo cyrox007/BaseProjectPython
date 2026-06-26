@@ -1,5 +1,6 @@
 # core/redis.py
 import json
+import pickle
 from typing import Any, Optional, Union
 from datetime import timedelta
 import redis.asyncio as redis
@@ -74,7 +75,9 @@ class RedisClient:
         if not self._client:
             await self.connect()
         try:
-            if isinstance(value, (dict, list)):
+            if isinstance(value, bytes):
+                pass  # Оставляем как есть
+            elif isinstance(value, (dict, list)):
                 value = json.dumps(value)
             elif not isinstance(value, str):
                 value = str(value)
@@ -151,7 +154,8 @@ def cache(
     key_prefix: str = "",
     ttl: int = 300,  # 5 минут
     key_from_args: bool = True,
-    key_args: list = None
+    key_args: list = None,
+    use_pickle: bool = False
 ):
     """
     Декоратор для кэширования результатов функций.
@@ -196,6 +200,8 @@ def cache(
             if redis_client.client:
                 cached_value = await redis_client.get(cache_key)
                 if cached_value is not None:
+                    if use_pickle:
+                        return pickle.loads(cached_value)
                     try:
                         # Пробуем парсить как JSON
                         return json.loads(cached_value)
@@ -208,9 +214,10 @@ def cache(
             # Сохраняем в кэш
             if result is not None and redis_client.client:
                 try:
-                    value_to_cache = result
-                    if isinstance(result, (dict, list)):
-                        value_to_cache = json.dumps(result)
+                    if use_pickle:
+                        value_to_cache = pickle.dumps(result)
+                    else:
+                        value_to_cache = json.dumps(result, default=str)
                     await redis_client.set(cache_key, value_to_cache, ttl=ttl)
                 except Exception as e:
                     logger.warning(f"Не удалось сохранить в кэш: {e}")

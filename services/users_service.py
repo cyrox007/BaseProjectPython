@@ -3,31 +3,39 @@ from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from core.logger import setup_logger
+from core.redis import cache, invalidate_cache
 from models.roles_model import UserRoleAssociation
 from models.users_model import User
+from schemas.users.schemas import UserItem, UserList
 from utils.hashed_password import hash_password
 
 logger = setup_logger(__name__)
 
-
-async def get_users_list(session: AsyncSession, offset=0, limit=10) -> List[User]:
-    stmt = select(User)
+@cache(key_prefix="users:list", ttl=60, key_args=["offset", "limit"], use_pickle=True)
+async def get_users_list(session: AsyncSession, offset=0, limit=10) -> UserList:
+    stmt = select(User).options(selectinload(User.role))
 
     # фильтрация по свойствам тут
 
     stmt = stmt.offset(offset).limit(limit)
 
     result = await session.execute(stmt)
-    return result.scalars()
+    users = result.scalars().all()
+    return UserList(users=users)
 
-async def get_user_by_uuid(session: AsyncSession, uuid: UUID) -> Optional[User]:
+async def get_user_by_uuid(session: AsyncSession, uuid: UUID) -> UserItem:
     result = await session.execute(
         select(User).where(User.id == uuid)
     )
-    return result.scalar_one_or_none()
+    user = result.scalar_one_or_none()
+    return UserItem(id=user, email=user.email,
+                    firstname=user.firstname, lastname=user.lastname, 
+                    role=user.role)
 
+@cache(key_prefix='user:email', ttl=300, key_args=['email'])
 async def get_user_by_email(session: AsyncSession, email: str) -> Optional[User]:
     result = await session.execute(
         select(User).where(User.email == email)
@@ -53,6 +61,7 @@ async def insert_user(
 
     try:
         await session.flush()
+        await invalidate_cache("users:*")
         logger.info(f"Пользователь создан: {new_user.id}")
         return new_user
     except Exception as e:
@@ -94,6 +103,9 @@ async def update_user(
             user.hashed_password = hash_password(password)
         
         await session.flush()
+
+        await invalidate_cache("user:*")
+        await invalidate_cache("users:*")
         return user
         
     except Exception as e:

@@ -37,7 +37,7 @@ async def get_permissions(session: AsyncSession, offset: int = 0, limit: int = 1
         stmt
     )
 
-    return result.scalars()
+    return result.scalars().all()
 
 async def get_permission(session: AsyncSession, permission_id: UUID) -> Optional[Permission]:
     return await session.get(Permission, permission_id)

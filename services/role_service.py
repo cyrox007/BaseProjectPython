@@ -19,7 +19,7 @@ async def get_role_list(session: AsyncSession, limit: int = 10, offset: int = 0)
 
     result = await session.execute(stmt)
 
-    return result.scalars()
+    return result.scalars().all()
 
 async def get_role(session: AsyncSession, role_id: UUID) -> Optional[Role]:
     return await session.get(Role, role_id)
